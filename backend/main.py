@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from groq import Groq
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
+from huggingface_hub import InferenceClient
 from supabase import create_client
 
 # ---------------- Configuration ----------------
@@ -40,8 +40,18 @@ groq = Groq(api_key=GROQ_API_KEY)
 
 # Embeddings run locally: free, unlimited, no API key, no quota.
 # all-MiniLM-L6-v2 outputs 384 numbers per chunk (see EMBED_DIM in schema.sql).
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
-EMBED_DIM = embedder.get_sentence_embedding_dimension()
+# embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# EMBED_DIM = embedder.get_sentence_embedding_dimension()
+
+# Embeddings are generated remotely using Hugging Face.
+# all-MiniLM-L6-v2 produces 384-dimensional vectors.
+HF_TOKEN = env("HF_TOKEN", "")
+HF_EMBED_MODEL = env(
+    "HF_EMBED_MODEL",
+    "sentence-transformers/all-MiniLM-L6-v2"
+)
+
+hf_client = InferenceClient(token=HF_TOKEN)
 
 app = FastAPI(title="QuillAI", version="2.1.0")
 app.add_middleware(
@@ -137,10 +147,51 @@ def make_chunks(pages, size=1000, overlap=150):
 
 
 # ---------------- Embeddings (local, free, no quota) ----------------
+# def embed(texts: list[str]) -> list[list[float]]:
+#     if not texts:
+#         return []
+#     return embedder.encode(texts, normalize_embeddings=True).tolist()
+# def embed(texts: list[str]) -> list[list[float]]:
+#     if not texts:
+#         return []
+
+#     result = hf_client.feature_extraction(
+#         texts,
+#         model=HF_EMBED_MODEL
+#     )
+
+#     # Hugging Face may return either:
+#     # - (384,) for a single text
+#     # - (n, 384) for multiple texts
+#     if len(texts) == 1:
+#         return [result.tolist()]
+
+#     return result.tolist()
+
 def embed(texts: list[str]) -> list[list[float]]:
     if not texts:
         return []
-    return embedder.encode(texts, normalize_embeddings=True).tolist()
+
+    result = hf_client.feature_extraction(
+        texts,
+        model=HF_EMBED_MODEL
+    )
+
+    # Convert NumPy array to a normal Python list.
+    data = result.tolist()
+
+    # Single text may come back as:
+    # [384 floats]
+    # or:
+    # [[384 floats]]
+    if len(texts) == 1:
+        if data and isinstance(data[0], list):
+            return [data[0]]
+        return [data]
+
+    # Multiple texts should be:
+    # [[384 floats], [384 floats], ...]
+    return data
 
 
 # ---------------- Groq: analysis + RAG chat answers ----------------
@@ -203,10 +254,28 @@ content, phishing-style text, exposed sensitive information, or unsafe links.
 </document>""", AIAnalysis)
 
 
+# def find_chunks(user_id: str, question: str, document_id: str | None, k: int = 6) -> list[dict]:
+#     vector = embed([question])[0]
+#     rows = supabase.rpc("match_chunks", {"query_embedding": vector, "match_user": user_id,
+#                                          "match_doc": document_id, "match_count": k}).execute().data
+#     return [{**r, "similarity": round(r["similarity"], 3)} for r in rows]
+
 def find_chunks(user_id: str, question: str, document_id: str | None, k: int = 6) -> list[dict]:
     vector = embed([question])[0]
-    rows = supabase.rpc("match_chunks", {"query_embedding": vector, "match_user": user_id,
-                                         "match_doc": document_id, "match_count": k}).execute().data
+
+    # Convert the embedding to PostgreSQL pgvector literal format.
+    vector_literal = "[" + ",".join(str(float(x)) for x in vector) + "]"
+
+    rows = supabase.rpc(
+        "match_chunks",
+        {
+            "query_embedding": vector_literal,
+            "match_user": user_id,
+            "match_doc": document_id,
+            "match_count": k,
+        },
+    ).execute().data
+
     return [{**r, "similarity": round(r["similarity"], 3)} for r in rows]
 
 
