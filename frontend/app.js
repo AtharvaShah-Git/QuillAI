@@ -54,7 +54,7 @@ async function start() {
     try {
         if (typeof supabase === "undefined") throw new Error("Could not load the login library. Check your internet connection and refresh.");
         const response = await fetch("/api/config");
-        if (!response.ok) throw new Error("Could not reach the DocuMind server. Is it running on port 8000?");
+        if (!response.ok) throw new Error("Could not reach the QuillAI server. Is it running on port 8000?");
         const config = await response.json();
         db = supabase.createClient(config.supabase_url, config.supabase_key);
         const { data } = await db.auth.getSession();
@@ -84,7 +84,7 @@ function setMode(signUp) {
     $("confirmRow").hidden = !signUp;
     $("confirmPassword").required = signUp;
     $("password").autocomplete = signUp ? "new-password" : "current-password";
-    $("switchText").textContent = signUp ? "Already have an account?" : "New to DocuMind?";
+    $("switchText").textContent = signUp ? "Already have an account?" : "New to QuillAI?";
     $("switchLink").textContent = signUp ? "Log in" : "Create an account";
     setAuthStatus("");
 }
