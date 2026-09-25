@@ -1,0 +1,451 @@
+# QuillAI
+
+**Turn documents into clear, searchable insights — powered by AI.**
+
+QuillAI is a cloud-based AI document analysis platform that allows users to upload PDF, DOCX, and TXT documents, automatically analyze them, search their contents using semantic search, and ask questions using Retrieval-Augmented Generation (RAG).
+
+The application combines a FastAPI backend, Supabase cloud services, pgvector, a local sentence-transformer embedding model, and the Groq AI API to provide an end-to-end cloud-based document intelligence system.
+
+---
+
+## ✨ Features
+
+- **User Authentication**
+  - Sign up and log in using email and password.
+  - Authentication is handled securely using Supabase Auth.
+  - Each user can access only their own documents.
+
+- **Document Upload & AI Analysis**
+  - Upload PDF, DOCX, or TXT files.
+  - Automatically extract document text.
+  - Generate summaries, document type, keywords, important points, suggested questions, and security observations.
+
+- **Chat with Documents**
+  - Ask questions about uploaded documents.
+  - Uses Retrieval-Augmented Generation (RAG).
+  - Retrieves relevant document passages using vector similarity search.
+  - Generates answers using the Groq AI model.
+
+- **Semantic Search**
+  - Search documents based on meaning rather than exact keywords.
+  - Uses vector embeddings and pgvector similarity search.
+
+- **Dashboard**
+  - View uploaded documents and document statistics.
+
+- **⬇Secure Document Download**
+  - Original documents are stored in a private Supabase Storage bucket.
+  - Downloads use temporary signed URLs.
+
+- **Document Management**
+  - Users can delete documents and their associated searchable data.
+
+---
+
+## How QuillAI Works
+
+```text
+                    Internet
+                       │
+                       ▼
+              ┌─────────────────┐
+              │   QuillAI Web   │
+              │   HTML/CSS/JS   │
+              └────────┬────────┘
+                       │ HTTPS
+                       ▼
+              ┌─────────────────┐
+              │ FastAPI Backend │
+              │    Python       │
+              └────────┬────────┘
+                       │
+        ┌──────────────┼────────────────┐
+        │              │                │
+        ▼              ▼                ▼
+┌─────────────┐ ┌──────────────┐ ┌─────────────┐
+│  Supabase   │ │  Supabase    │ │  Groq API   │
+│    Auth     │ │   Storage    │ │     LLM     │
+└─────────────┘ └──────────────┘ └─────────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │   PostgreSQL    │
+              │    + pgvector   │
+              └────────┬────────┘
+                       ▲
+                       │
+              ┌────────┴────────┐
+              │ Sentence        │
+              │ Transformers    │
+              │ MiniLM Model    │
+              └─────────────────┘
+```
+
+### Upload → Analyze → Search → Chat
+
+1. **Upload** — The user uploads a PDF, DOCX, or TXT document.
+2. **Text Extraction** — The FastAPI backend extracts text using `pypdf`, `python-docx`, or UTF-8 text reading.
+3. **AI Analysis** — Extracted text is sent to Groq for structured analysis.
+4. **Chunking** — The document is divided into smaller overlapping text chunks.
+5. **Embedding Generation** — Each chunk is converted into a 384-dimensional vector using `all-MiniLM-L6-v2`.
+6. **Cloud Storage** — The original document is stored in Supabase Storage, while document data and vectors are stored in PostgreSQL/pgvector.
+7. **Semantic Search** — Questions are embedded and matched against document chunks using vector similarity.
+8. **AI Question Answering** — Retrieved passages are provided to Groq as context for generating document-based answers.
+
+---
+
+## Cloud Computing Architecture
+
+QuillAI demonstrates multiple cloud computing concepts:
+
+```text
+                    Cloud / Internet
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │    QuillAI App    │
+                 │   Web Interface   │
+                 └─────────┬─────────┘
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │  FastAPI Backend  │
+                 │    Cloud Hosted   │
+                 └─────────┬─────────┘
+                           │
+          ┌────────────────┼─────────────────┐
+          │                │                 │
+          ▼                ▼                 ▼
+   ┌────────────┐   ┌────────────┐   ┌────────────┐
+   │  Supabase  │   │  Supabase  │   │  Groq API  │
+   │    Auth    │   │   Storage  │   │     LLM    │
+   └────────────┘   └────────────┘   └────────────┘
+                           │
+                           ▼
+                  ┌─────────────────┐
+                  │ PostgreSQL      │
+                  │ + pgvector      │
+                  └─────────────────┘
+```
+
+### Cloud Services Used
+
+| Cloud Component | Service | Purpose |
+|---|---|---|
+| Authentication | Supabase Auth | User registration and login |
+| Object Storage | Supabase Storage | Store uploaded documents |
+| Database | Supabase PostgreSQL | Store application and document data |
+| Vector Database | pgvector | Semantic similarity search |
+| AI Service | Groq API | Document analysis and question answering |
+| Backend Hosting | Render / Cloud Platform | Host FastAPI application |
+| Frontend | FastAPI Static Files | Serve the web interface |
+
+---
+
+## Technology Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | HTML, CSS, JavaScript | Web interface |
+| Backend | FastAPI | REST API and application backend |
+| Programming Language | Python | Backend development |
+| Authentication | Supabase Auth | Secure user authentication |
+| Cloud Storage | Supabase Storage | Document storage |
+| Database | PostgreSQL | Application and document data |
+| Vector Search | pgvector | Semantic search |
+| Embeddings | Sentence Transformers | Generate document embeddings |
+| Embedding Model | `all-MiniLM-L6-v2` | 384-dimensional embeddings |
+| AI | Groq API | AI analysis and document chat |
+| PDF Processing | pypdf | Extract PDF text |
+| DOCX Processing | python-docx | Extract Word document text |
+| Hosting | Render | Cloud deployment |
+
+---
+
+## Project Structure
+
+```text
+QuillAI/
+│
+├── README.md
+│
+├── backend/
+│   ├── main.py
+│   ├── schema.sql
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── .env
+│
+├── frontend/
+│   ├── index.html
+│   ├── styles.css
+│   └── app.js
+│
+└── .gitignore
+```
+
+---
+
+# Quick Start
+
+## 1. Clone the Repository
+
+```bash
+git clone https://github.com/AtharvaShah-Git/QuillAI.git
+cd QuillAI
+```
+
+## 2. Create a Python Virtual Environment
+
+```bash
+cd backend
+python -m venv venv
+```
+
+### macOS / Linux
+
+```bash
+source venv/bin/activate
+```
+
+### Windows
+
+```bash
+venv\Scripts\activate
+```
+
+## 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## 4. Configure Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+Then configure:
+
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SECRET_KEY=your_supabase_secret_key
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+SUPABASE_BUCKET=documents
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-20b
+MAX_FILE_SIZE_MB=20
+MAX_PAGES=200
+```
+
+### Security
+
+Never commit your `.env` file to GitHub. It contains private credentials and API keys.
+
+---
+
+# Supabase Database Setup
+
+Create a Supabase project and configure:
+
+- Supabase Authentication
+- Supabase Storage
+- PostgreSQL
+- pgvector
+
+Run the SQL commands from:
+
+```text
+backend/schema.sql
+```
+
+in the Supabase SQL Editor.
+
+Create a Storage bucket named:
+
+```text
+documents
+```
+
+The bucket should remain private because QuillAI uses signed URLs for downloads.
+
+---
+
+# Groq AI Configuration
+
+QuillAI uses the Groq API for document summarization, keyword generation, important-point extraction, suggested questions, security observations, and document question answering.
+
+Configure:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-20b
+```
+
+---
+
+# Run Locally
+
+From the `backend` directory:
+
+```bash
+uvicorn main:app --reload --port 8000
+```
+
+Open:
+
+```text
+http://localhost:8000
+```
+
+---
+
+# RAG Pipeline
+
+QuillAI uses Retrieval-Augmented Generation (RAG) for document question answering.
+
+```text
+             User Question
+                   │
+                   ▼
+        Sentence Transformer
+                   │
+                   ▼
+          Question Embedding
+                   │
+                   ▼
+        PostgreSQL + pgvector
+                   │
+                   ▼
+        Relevant Text Chunks
+                   │
+                   ▼
+             Groq LLM
+                   │
+                   ▼
+              AI Answer
+```
+
+---
+
+# Security
+
+- Passwords are handled by Supabase Authentication.
+- Authentication tokens identify users.
+- User documents are isolated by user ID.
+- Original documents are stored in a private Storage bucket.
+- Temporary signed URLs are used for document downloads.
+- API credentials are stored in environment variables.
+- `.env` is excluded from version control.
+- Document content is treated as untrusted input when passed to the AI model.
+
+---
+
+# Known Limitations
+
+- Scanned or image-only PDFs are not supported because the current implementation does not include OCR.
+- AI-generated summaries and answers may occasionally be incomplete or inaccurate.
+- Accuracy depends on document text extraction, chunking, embeddings, retrieval quality, prompts, and the selected AI model.
+- Complex or poorly formatted documents may produce less accurate results.
+- Chat questions are processed independently and do not maintain conversation memory.
+- Security observations are AI-generated observations and are not a replacement for dedicated malware or security scanning.
+- The local embedding model requires additional memory and processing during application startup.
+- Free cloud hosting may experience cold starts after periods of inactivity.
+
+---
+
+# Cloud Deployment
+
+QuillAI can be deployed as a cloud application using a platform such as Render.
+
+```text
+User
+ │
+ │ HTTPS
+ ▼
+Render
+ │
+ │ FastAPI
+ ▼
+QuillAI Backend
+ │
+ ├──────────────► Supabase Auth
+ │
+ ├──────────────► Supabase Storage
+ │
+ ├──────────────► Supabase PostgreSQL
+ │                         │
+ │                         ▼
+ │                      pgvector
+ │
+ └──────────────► Groq API
+```
+
+The application can therefore be accessed remotely through the internet instead of only running on localhost.
+
+---
+
+# Authors
+
+**Atharva Shah**
+
+Government Polytechnic, Pune
+
+Computer Engineering
+
+**Nishtha Bhange**
+
+Government Polytechnic, Pune
+
+Computer Engineering
+
+---
+
+# Academic Project
+
+QuillAI is developed as an academic Cloud Computing project to demonstrate the integration of:
+
+- Cloud computing
+- Cloud storage
+- Cloud databases
+- Authentication as a service
+- AI APIs
+- Vector databases
+- REST APIs
+- Retrieval-Augmented Generation
+- Web application deployment
+
+---
+
+# License
+
+This project is developed for academic and educational purposes.
+
+---
+
+## Project Summary
+
+**QuillAI** transforms uploaded documents into searchable and interactive knowledge.
+
+```text
+Upload Document
+       ↓
+Extract Text
+       ↓
+AI Analysis
+       ↓
+Create Embeddings
+       ↓
+Store in Cloud
+       ↓
+Semantic Search
+       ↓
+Retrieve Relevant Content
+       ↓
+Ask AI
+       ↓
+Get Document-Based Answer
+```
+
+**Built with FastAPI + Supabase + PostgreSQL/pgvector + Sentence Transformers + Groq AI.**

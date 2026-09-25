@@ -43,7 +43,7 @@ groq = Groq(api_key=GROQ_API_KEY)
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 EMBED_DIM = embedder.get_sentence_embedding_dimension()
 
-app = FastAPI(title="DocuMind", version="2.1.0")
+app = FastAPI(title="QuillAI", version="2.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
