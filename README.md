@@ -8,7 +8,7 @@ The application combines a FastAPI backend, Supabase cloud services, pgvector, a
 
 ---
 
-## ✨ Features
+## Features
 
 - **User Authentication**
   - Sign up and log in using email and password.
